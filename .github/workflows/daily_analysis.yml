@@ -143,35 +143,16 @@ jobs:
           else
             echo "⚠️ 未生成报告文件"
           fi
-
-      - name: 自动设置首页
-        if: always()
-        run: |
-          cd reports
-          # 查找最新的个股分析报告或大盘复盘文件
-          latest_report=$(ls -t report_*.md 2>/dev/null | head -1)
-          latest_market=$(ls -t market_review_*.md 2>/dev/null | head -1)
-          
-          # 优先使用个股报告作为首页，其次是大盘复盘
-          if [ -n "$latest_report" ]; then
-            cp "$latest_report" index.md
-            echo "✅ 已将 $latest_report 设置为 index.md"
-          elif [ -n "$latest_market" ]; then
-            cp "$latest_market" index.md
-            echo "✅ 已将 $latest_market 设置为 index.md"
-          else
-            echo "❌ 未找到符合条件的 .md 报告文件"
-          fi
-          
+ 
        - name: 自动设置首页
          if: always()
          run: |
-         cd reports
-         latest_report=$(ls -t report_*.md 2>/dev/null | head -1)
-         if [ -n "$latest_report" ]; then
-         echo -e "---\nlayout: default\n---\n" > index.md
-         cat "$latest_report" >> index.md
-         fi
+           cd reports
+           latest_report=$(ls -t report_*.md 2>/dev/null | head -1)
+           if [ -n "$latest_report" ]; then
+             echo -e "---\nlayout: default\n---\n" > index.md
+             cat "$latest_report" >> index.md
+           fi
       
       - name: 部署到 GitHub Pages
         if: always()
