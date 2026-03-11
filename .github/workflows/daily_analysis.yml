@@ -154,11 +154,11 @@ jobs:
           
           # 优先使用个股报告作为首页，其次是大盘复盘
           if [ -n "$latest_report" ]; then
-            cp "$latest_report" index.md
-            echo "✅ 已将 $latest_report 设置为 index.md"
+            cp "$latest_report" index.html
+            echo "✅ 已将 $latest_report 设置为 index.html"
           elif [ -n "$latest_market" ]; then
-            cp "$latest_market" index.md
-            echo "✅ 已将 $latest_market 设置为 index.md"
+            cp "$latest_market" index.html
+            echo "✅ 已将 $latest_market 设置为 index.html"
           else
             echo "❌ 未找到符合条件的 .md 报告文件"
           fi
