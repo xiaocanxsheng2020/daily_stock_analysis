@@ -144,15 +144,15 @@ jobs:
             echo "⚠️ 未生成报告文件"
           fi
  
-       - name: 自动设置首页
-         if: always()
-         run: |
-           cd reports
-           latest_report=$(ls -t report_*.md 2>/dev/null | head -1)
-           if [ -n "$latest_report" ]; then
-             printf -- "---\nlayout: default\n---\n\n" > index.md
-             cat "$latest_report" >> index.md
-           fi
+      - name: 自动设置首页
+        if: always()
+        run: |
+          cd reports
+          latest_report=$(ls -t report_*.md 2>/dev/null | head -1)
+          if [ -n "$latest_report" ]; then
+            printf -- "---\nlayout: default\n---\n\n" > index.md
+            cat "$latest_report" >> index.md
+          fi
       
       - name: 部署到 GitHub Pages
         if: always()
