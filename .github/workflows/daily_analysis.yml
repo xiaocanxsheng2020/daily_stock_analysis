@@ -51,16 +51,16 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: 创建必要目录
         run: |
           mkdir -p data logs reports
-      
+
       - name: 执行股票分析
         env:
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
-          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || secrets.GEMINI_MODEL || 'gemini-3-flash-preview' }}
-          GEMINI_MODEL_FALLBACK: ${{ vars.GEMINI_MODEL_FALLBACK || secrets.GEMINI_MODEL_FALLBACK || 'gemini-2.5-flash' }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
+          GEMINI_MODEL_FALLBACK: ${{ vars.GEMINI_MODEL_FALLBACK || 'gemini-2.0-flash' }}
           GEMINI_REQUEST_DELAY: '3.0'
           AIHUBMIX_KEY: ${{ secrets.AIHUBMIX_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -107,7 +107,7 @@ jobs:
           MAX_WORKERS: ${{ vars.MAX_WORKERS || secrets.MAX_WORKERS || '1' }}
           ENABLE_CHIP_DISTRIBUTION: 'false'
           REALTIME_SOURCE_PRIORITY: ${{ vars.REALTIME_SOURCE_PRIORITY || 'tencent,akshare_sina,efinance,akshare_em' }}
-          
+
         run: |
           MODE="${{ github.event.inputs.mode || 'full' }}"
           FORCE_RUN_ARG=""
@@ -121,7 +121,7 @@ jobs:
           else
             python main.py $FORCE_RUN_ARG
           fi
-      
+
       - name: 上传分析报告
         uses: actions/upload-artifact@v4
         if: always()
@@ -131,7 +131,7 @@ jobs:
             reports/
             logs/
           retention-days: 30
-      
+
       - name: 显示运行结果
         if: always()
         run: |
@@ -143,17 +143,30 @@ jobs:
           else
             echo "⚠️ 未生成报告文件"
           fi
- 
+
       - name: 自动设置首页
         if: always()
         run: |
           cd reports
-          latest_report=$(ls -t report_*.md 2>/dev/null | head -1)
-          if [ -n "$latest_report" ]; then
-            printf -- "---\nlayout: default\n---\n\n" > index.md
-            cat "$latest_report" >> index.md
-          fi
-      
+          echo "---" > index.md
+          echo "layout: default" >> index.md
+          echo "---" >> index.md
+          echo "" >> index.md
+          # 先加大盘复盘
+          for f in $(ls -t market_review_*.md 2>/dev/null | head -1); do
+            cat "$f" >> index.md
+            echo "" >> index.md
+            echo "---" >> index.md
+            echo "" >> index.md
+          done
+          # 再加个股报告
+          for f in $(ls -t report_*.md 2>/dev/null); do
+            cat "$f" >> index.md
+            echo "" >> index.md
+            echo "---" >> index.md
+            echo "" >> index.md
+          done
+
       - name: 部署到 GitHub Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v3
