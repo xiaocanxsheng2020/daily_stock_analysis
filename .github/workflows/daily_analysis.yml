@@ -147,18 +147,19 @@ jobs:
       - name: 自动设置首页
         if: always()
         run: |
-          pip install markdown -q
           cd reports
-          python3 -c "
-import markdown, glob
-content = ''
-for f in sorted(glob.glob('market_review_*.md'), reverse=True)[:1]:
-    content += open(f, encoding='utf-8').read() + '\n\n---\n\n'
-for f in sorted(glob.glob('report_*.md'), reverse=True):
-    content += open(f, encoding='utf-8').read() + '\n\n---\n\n'
-html = markdown.markdown(content, extensions=['tables', 'fenced_code'])
-open('index.html', 'w', encoding='utf-8').write('<html><head><meta charset=\"utf-8\"><title>每日股票分析报告</title><style>body{font-family:Arial,sans-serif;max-width:900px;margin:0 auto;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px}th{background:#f2f2f2}</style></head><body>' + html + '</body></html>')
-"
+          for f in $(ls -t market_review_*.md 2>/dev/null | head -1); do
+            cat "$f" >> index.md
+            echo "" >> index.md
+            echo "---" >> index.md
+            echo "" >> index.md
+          done
+          for f in $(ls -t report_*.md 2>/dev/null); do
+            cat "$f" >> index.md
+            echo "" >> index.md
+            echo "---" >> index.md
+            echo "" >> index.md
+          done
 
       - name: 部署到 GitHub Pages
         if: always()
@@ -167,3 +168,5 @@ open('index.html', 'w', encoding='utf-8').write('<html><head><meta charset=\"utf
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./reports
           publish_branch: gh-pages
+          force_orphan: true
+          enable_jekyll: true
