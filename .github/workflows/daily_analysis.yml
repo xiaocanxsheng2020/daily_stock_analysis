@@ -149,40 +149,16 @@ jobs:
         run: |
           pip install markdown -q
           cd reports
-          python3 - <<'EOF'
-import markdown
-import glob
-
-content = ""
-for f in sorted(glob.glob("market_review_*.md"), reverse=True)[:1]:
-    with open(f, encoding="utf-8") as fp:
-        content += fp.read() + "\n\n---\n\n"
-for f in sorted(glob.glob("report_*.md"), reverse=True):
-    with open(f, encoding="utf-8") as fp:
-        content += fp.read() + "\n\n---\n\n"
-
-html = markdown.markdown(content, extensions=["tables", "fenced_code"])
-with open("index.html", "w", encoding="utf-8") as fp:
-    fp.write(f"""<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>每日股票分析报告</title>
-  <style>
-    body {{ font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }}
-    h1, h2, h3 {{ color: #333; }}
-    table {{ border-collapse: collapse; width: 100%; }}
-    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-    th {{ background-color: #f2f2f2; }}
-    hr {{ border: 1px solid #eee; margin: 30px 0; }}
-  </style>
-</head>
-<body>
-{html}
-</body>
-</html>""")
-EOF
+          python3 -c "
+import markdown, glob
+content = ''
+for f in sorted(glob.glob('market_review_*.md'), reverse=True)[:1]:
+    content += open(f, encoding='utf-8').read() + '\n\n---\n\n'
+for f in sorted(glob.glob('report_*.md'), reverse=True):
+    content += open(f, encoding='utf-8').read() + '\n\n---\n\n'
+html = markdown.markdown(content, extensions=['tables', 'fenced_code'])
+open('index.html', 'w', encoding='utf-8').write('<html><head><meta charset=\"utf-8\"><title>每日股票分析报告</title><style>body{font-family:Arial,sans-serif;max-width:900px;margin:0 auto;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px}th{background:#f2f2f2}</style></head><body>' + html + '</body></html>')
+"
 
       - name: 部署到 GitHub Pages
         if: always()
