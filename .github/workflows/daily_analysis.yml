@@ -147,19 +147,9 @@ jobs:
       - name: 自动设置首页
         if: always()
         run: |
-          cd reports
-          for f in $(ls -t market_review_*.md 2>/dev/null | head -1); do
-            cat "$f" >> index.md
-            echo "" >> index.md
-            echo "---" >> index.md
-            echo "" >> index.md
-          done
-          for f in $(ls -t report_*.md 2>/dev/null); do
-            cat "$f" >> index.md
-            echo "" >> index.md
-            echo "---" >> index.md
-            echo "" >> index.md
-          done
+          pip install markdown -q
+          mkdir -p reports
+          python3 scripts/generate_index.py
 
       - name: 部署到 GitHub Pages
         if: always()
@@ -169,4 +159,3 @@ jobs:
           publish_dir: ./reports
           publish_branch: gh-pages
           force_orphan: true
-          enable_jekyll: true
