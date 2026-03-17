@@ -61,6 +61,7 @@ jobs:
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
           GEMINI_MODEL_FALLBACK: ${{ vars.GEMINI_MODEL_FALLBACK || 'gemini-2.0-flash' }}
+          LITELLM_MODEL: ${{ vars.LITELLM_MODEL || vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
           GEMINI_REQUEST_DELAY: '3.0'
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           AIHUBMIX_KEY: ${{ secrets.AIHUBMIX_KEY }}
