@@ -28,7 +28,6 @@ def parse_market(md):
 
 # ── 解析个股报告 ──────────────────────────────────────────
 def parse_stocks(md):
-    # 汇总行：🟢买入:N 🟡观望:N 🔴卖出:N
     summary = {'buy': 0, 'hold': 0, 'sell': 0, 'total': 0}
     sm = re.search(r'共分析\s*\*\*(\d+)\*\*', md)
     if sm:
@@ -40,26 +39,34 @@ def parse_stocks(md):
     if hm: summary['hold'] = int(hm.group(1))
     if sem: summary['sell'] = int(sem.group(1))
 
+    # 先从摘要行提取评分
+    score_map = {}
+    for m in re.finditer(r'[🟢🟡🔴⚪]\s*\*\*(.+?)\((\d+)\)\*\*.*?评分\s*(\d+)', md):
+        name = m.group(1).strip()
+        score_map[name] = int(m.group(3))
+
     stocks = []
-    # 按 ## 🟡/🟢/🔴 股票名 (代码) 分块
-    blocks = re.split(r'\n## [🟡🟢🔴].+?\n', md)
-    headers = re.findall(r'## ([🟡🟢🔴]) (.+?) \((\d+)\)', md)
+    # 按 ## emoji 股票名 (代码) 分块，支持 🟡🟢🔴⚪
+    headers = re.findall(r'## ([🟡🟢🔴⚪]) (.+?) \((\d+)\)', md)
+    blocks = re.split(r'\n## [🟡🟢🔴⚪].+?\n', md)
 
     for i, header in enumerate(headers):
         emoji, name, code = header
         block = blocks[i+1] if i+1 < len(blocks) else ''
 
-        # 信号
+        # 信号判断 — 支持⚪观望
         if emoji == '🟢':
-            signal, sig_cls, sig_label = 'buy', 'buy', '买入'
+            sig_cls, sig_label = 'buy', '买入'
         elif emoji == '🔴':
-            signal, sig_cls, sig_label = 'sell', 'sell', '卖出'
+            sig_cls, sig_label = 'sell', '卖出'
         else:
-            signal, sig_cls, sig_label = 'hold', 'hold', '观望'
+            sig_cls, sig_label = 'hold', '观望'
 
-        # 评分
-        score_m = re.search(r'评分\s*(\d+)', block)
-        score = int(score_m.group(1)) if score_m else 50
+        # 评分 — 先从摘要取，再从块内取
+        score = score_map.get(name, None)
+        if score is None:
+            score_m = re.search(r'评分\s*(\d+)', block)
+            score = int(score_m.group(1)) if score_m else 50
 
         # 评分颜色
         if score >= 65:
@@ -72,19 +79,23 @@ def parse_stocks(md):
         # 一句话决策
         decision_m = re.search(r'一句话决策[：:]\s*(.+)', block)
         decision = decision_m.group(1).strip() if decision_m else '暂无分析'
-        # 截断太长的决策
-        if len(decision) > 60:
-            decision = decision[:60] + '...'
+        if '分析过程出错' in decision or 'All LLM' in decision:
+            decision = '等待下次分析结果'
+        if len(decision) > 80:
+            decision = decision[:80] + '...'
 
-        # 风险提示
-        risk_m = re.search(r'风险提示[：:]\s*(.+)', block)
-        risk = risk_m.group(1).strip() if risk_m else ''
+        # 关键数据
+        close_m = re.search(r'\|\s*([\d.]+)\s*\|.*?\|\s*([\d.+-]+%)\s*\|', block)
+        close = close_m.group(1) if close_m else '--'
+        change = close_m.group(2) if close_m else '--'
+        change_color = '#3fb950' if close_m and '+' in close_m.group(2) else '#f85149' if close_m and '-' in close_m.group(2) else '#e6edf3'
 
         stocks.append({
             'name': name, 'code': code,
-            'signal': signal, 'sig_cls': sig_cls, 'sig_label': sig_label,
+            'sig_cls': sig_cls, 'sig_label': sig_label,
             'score': score, 'score_color': score_color,
-            'decision': decision, 'risk': risk,
+            'decision': decision,
+            'close': close, 'change': change, 'change_color': change_color,
         })
 
     return summary, stocks
@@ -102,21 +113,20 @@ date, indices, vol, up_cnt, dn_cnt = parse_market(market_md) if market_md else (
 summary, stocks = parse_stocks(report_md) if report_md else ({'buy':0,'hold':0,'sell':0,'total':0}, [])
 
 # ── 生成 HTML ─────────────────────────────────────────────
-def index_html(name, val, chg, cls):
+def index_row(name, val, chg, cls):
     color = '#3fb950' if cls == 'up' else '#f85149'
     return f'<div class="market-item"><span class="label">{name}</span><span class="value" style="color:{color}">{val} {chg}</span></div>'
 
-indices_html = '\n'.join(index_html(*i) for i in indices) if indices else ''
+indices_html = '\n'.join(index_row(*i) for i in indices) if indices else ''
 indices_html += f'''
 <div class="market-item"><span class="label">两市成交额</span><span class="value" style="color:#e3b341">{vol}</span></div>
 <div class="market-item"><span class="label">上涨/下跌</span><span class="value">{up_cnt} / {dn_cnt}</span></div>
 '''
 
 def card_html(s):
-    border_color = '#3fb950' if s['signal']=='buy' else '#f85149' if s['signal']=='sell' else '#e3b341'
-    badge_bg = '#0d2f17' if s['signal']=='buy' else '#2d0f0f' if s['signal']=='sell' else '#2d2208'
-    risk_html = f'<div class="risk">⚠ {s["risk"]}</div>' if s['risk'] and '分析失败' not in s['risk'] else ''
-    decision_text = s['decision'] if '分析过程出错' not in s['decision'] else '等待下次分析结果'
+    border_color = '#3fb950' if s['sig_cls']=='buy' else '#f85149' if s['sig_cls']=='sell' else '#e3b341'
+    badge_bg = '#0d2f17' if s['sig_cls']=='buy' else '#2d0f0f' if s['sig_cls']=='sell' else '#2d2208'
+    close_html = f'<div class="close-price"><span style="color:{s["change_color"]}">{s["close"]} {s["change"]}</span></div>' if s['close'] != '--' else ''
     return f'''
 <div class="card" style="border-left:4px solid {border_color}">
   <div class="card-header">
@@ -124,15 +134,17 @@ def card_html(s):
       <div class="stock-name">{s['name']}</div>
       <div class="stock-code">{s['code']}</div>
     </div>
-    <span class="signal-badge" style="background:{badge_bg};color:{border_color};border:1px solid {border_color}">{s['sig_label']}</span>
+    <div style="text-align:right">
+      <span class="signal-badge" style="background:{badge_bg};color:{border_color};border:1px solid {border_color}">{s['sig_label']}</span>
+      {close_html}
+    </div>
   </div>
   <div class="score-bar">
     <span class="score-label">评分</span>
     <div class="bar-bg"><div class="bar-fill" style="width:{s['score']}%;background:{s['score_color']}"></div></div>
     <span style="font-size:0.8rem;color:{s['score_color']};min-width:24px">{s['score']}</span>
   </div>
-  <div class="decision">{decision_text}</div>
-  {risk_html}
+  <div class="decision">{s['decision']}</div>
 </div>'''
 
 cards_html = '\n'.join(card_html(s) for s in stocks)
@@ -160,19 +172,13 @@ body{{background:#0d1117;color:#e6edf3;font-family:'PingFang SC','Microsoft YaHe
 .card-header{{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}}
 .stock-name{{font-size:1.05rem;font-weight:700;color:#f0f6fc}}
 .stock-code{{font-size:0.75rem;color:#8b949e;margin-top:2px}}
-.signal-badge{{padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600}}
+.signal-badge{{padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;display:inline-block}}
+.close-price{{font-size:0.8rem;margin-top:4px;text-align:right}}
 .score-bar{{display:flex;align-items:center;gap:8px;margin:8px 0}}
 .score-label{{font-size:0.75rem;color:#8b949e;width:30px}}
 .bar-bg{{flex:1;height:6px;background:#21262d;border-radius:3px}}
 .bar-fill{{height:100%;border-radius:3px}}
 .decision{{font-size:0.85rem;color:#c9d1d9;margin-top:10px;padding:8px 10px;background:#0d1117;border-radius:6px;border-left:3px solid #30363d;line-height:1.5}}
-.risk{{font-size:0.8rem;color:#e3b341;margin-top:8px}}
-.market-section{{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:20px;margin-top:16px}}
-.market-section h2{{font-size:1rem;color:#f0f6fc;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #21262d}}
-.market-content{{font-size:0.875rem;color:#c9d1d9;line-height:1.8}}
-.market-content h3{{color:#58a6ff;font-size:0.9rem;margin:12px 0 6px}}
-.market-content ul{{padding-left:16px}}
-.market-content li{{margin:4px 0}}
 .footer{{text-align:center;color:#484f58;font-size:0.75rem;margin-top:24px;padding-top:16px;border-top:1px solid #21262d}}
 @media(max-width:600px){{.grid{{grid-template-columns:1fr}}.market-bar{{gap:10px}}}}
 </style>
@@ -182,21 +188,17 @@ body{{background:#0d1117;color:#e6edf3;font-family:'PingFang SC','Microsoft YaHe
   <h1>⚔ {date} 决策仪表盘</h1>
   <div class="sub">共分析 {summary['total']} 只股票 | AI 驱动智能分析</div>
 </div>
-
 <div class="market-bar">
 {indices_html}
 </div>
-
 <div class="summary">
   <span class="sum-item" style="background:#0d2f17;color:#3fb950">买入 {summary['buy']}</span>
   <span class="sum-item" style="background:#2d2208;color:#e3b341">观望 {summary['hold']}</span>
   <span class="sum-item" style="background:#2d0f0f;color:#f85149">卖出 {summary['sell']}</span>
 </div>
-
 <div class="grid">
 {cards_html}
 </div>
-
 <div class="footer">由 daily_stock_analysis 自动生成 · {date}</div>
 </body>
 </html>'''
@@ -204,4 +206,4 @@ body{{background:#0d1117;color:#e6edf3;font-family:'PingFang SC','Microsoft YaHe
 with open('index.html', 'w', encoding='utf-8') as f:
     f.write(html)
 
-print(f"index.html generated successfully — {len(stocks)} stocks")
+print(f"index.html generated — {len(stocks)} stocks, buy:{summary['buy']} hold:{summary['hold']} sell:{summary['sell']}")
