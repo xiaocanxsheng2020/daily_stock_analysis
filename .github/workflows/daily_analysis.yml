@@ -64,6 +64,7 @@ jobs:
           LITELLM_MODEL: ${{ vars.LITELLM_MODEL || vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
           GEMINI_REQUEST_DELAY: '3.0'
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           AIHUBMIX_KEY: ${{ secrets.AIHUBMIX_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || secrets.OPENAI_BASE_URL }}
