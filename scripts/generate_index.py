@@ -76,9 +76,9 @@ def parse_stocks(md):
         else:
             score_color = '#e3b341'
 
-        # 一句话决策（支持 > **一句话决策**: 和普通格式）
-        decision_m = re.search(r'一句话决策[：:]\**\s*(.+)', block)
-        decision = decision_m.group(1).strip().rstrip('*') if decision_m else '暂无分析'
+        # 一句话决策（支持 > **一句话决策**: 格式）
+        decision_m = re.search(r'一句话决策\*?\*?[：:]\*?\*?\s*(.+)', block)
+        decision = decision_m.group(1).strip().strip('*') if decision_m else '暂无分析'
         if '分析过程出错' in decision or 'All LLM' in decision:
             decision = '等待下次分析结果'
         if len(decision) > 80:
