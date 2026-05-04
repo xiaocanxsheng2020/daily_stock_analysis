@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2026-05-04 决策仪表盘</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'PingFang SC','Microsoft YaHei',sans-serif;padding:20px}
+.header{text-align:center;padding:24px 0 20px;border-bottom:1px solid #21262d}
+.header h1{font-size:1.6rem;font-weight:700;color:#f0f6fc;letter-spacing:2px}
+.header .sub{color:#8b949e;font-size:0.85rem;margin-top:6px}
+.market-bar{display:flex;gap:16px;margin:16px 0;padding:12px 16px;background:#161b22;border-radius:8px;border:1px solid #21262d;flex-wrap:wrap}
+.market-item{display:flex;flex-direction:column;gap:2px}
+.market-item .label{font-size:0.75rem;color:#8b949e}
+.market-item .value{font-size:0.95rem;font-weight:600;color:#e6edf3}
+.summary{display:flex;gap:12px;justify-content:center;margin:14px 0}
+.sum-item{padding:6px 18px;border-radius:20px;font-size:0.85rem;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:16px}
+.card{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:16px}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.stock-name{font-size:1.05rem;font-weight:700;color:#f0f6fc}
+.stock-code{font-size:0.75rem;color:#8b949e;margin-top:2px}
+.signal-badge{padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;display:inline-block}
+.close-price{font-size:0.8rem;margin-top:4px;text-align:right}
+.score-bar{display:flex;align-items:center;gap:8px;margin:8px 0}
+.score-label{font-size:0.75rem;color:#8b949e;width:30px}
+.bar-bg{flex:1;height:6px;background:#21262d;border-radius:3px}
+.bar-fill{height:100%;border-radius:3px}
+.decision{font-size:0.85rem;color:#c9d1d9;margin-top:10px;padding:8px 10px;background:#0d1117;border-radius:6px;border-left:3px solid #30363d;line-height:1.5}
+.footer{text-align:center;color:#484f58;font-size:0.75rem;margin-top:24px;padding-top:16px;border-top:1px solid #21262d}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.market-bar{gap:10px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>⚔ 2026-05-04 决策仪表盘</h1>
+  <div class="sub">共分析 1 只股票 | AI 驱动智能分析</div>
+</div>
+<div class="market-bar">
+
+<div class="market-item"><span class="label">两市成交额</span><span class="value" style="color:#e3b341">--</span></div>
+<div class="market-item"><span class="label">上涨/下跌</span><span class="value">-- / --</span></div>
+
+</div>
+<div class="summary">
+  <span class="sum-item" style="background:#0d2f17;color:#3fb950">买入 0</span>
+  <span class="sum-item" style="background:#2d2208;color:#e3b341">观望 1</span>
+  <span class="sum-item" style="background:#2d0f0f;color:#f85149">卖出 0</span>
+</div>
+<div class="grid">
+
+<div class="card" style="border-left:4px solid #e3b341">
+  <div class="card-header">
+    <div>
+      <div class="stock-name">康方生物</div>
+      <div class="stock-code">09926</div>
+    </div>
+    <div style="text-align:right">
+      <span class="signal-badge" style="background:#2d2208;color:#e3b341;border:1px solid #e3b341">观望</span>
+      
+    </div>
+  </div>
+  <div class="score-bar">
+    <span class="score-label">评分</span>
+    <div class="bar-bg"><div class="bar-fill" style="width:50%;background:#e3b341"></div></div>
+    <span style="font-size:0.8rem;color:#e3b341;min-width:24px">50</span>
+  </div>
+  <div class="decision">等待下次分析结果</div>
+</div>
+</div>
+<div class="footer">由 daily_stock_analysis 自动生成 · 2026-05-04</div>
+</body>
+</html>
